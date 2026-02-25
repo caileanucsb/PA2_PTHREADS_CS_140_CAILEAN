@@ -22,6 +22,7 @@
 #define TEST_CORRECTNESS 1
 #define TEST_REACH_CONVERGENCE 1
 #define THRESHOLD 0.000001
+#define DEBUG1 1
 
 /*Global variables*/
 double *matrix_A;

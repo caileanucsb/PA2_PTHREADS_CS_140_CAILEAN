@@ -22,7 +22,8 @@
 
 
 pthread_barrier_t mybarrier; /*It will be initailized at itmv_mult_test_pth.c*/
-
+volatile double global_error;
+int local_errors[THREAD_COUNT_MAX];
 
 /*---------------------------------------------------------------------
  * Function:            mv_compute
@@ -79,9 +80,34 @@ void mv_compute(int i) {
  *            double vector_y[]:  vector y
  */
 void work_block(long my_rank) {
-  /*Your solution*/
+  int blocksize = (matrix_dim + thread_count - 1) / thread_count;
+  int start = my_rank*blocksize; 
+  int end = start + blocksize;
+  if(end > matrix_dim) end = matrix_dim;
+  double local_error = 0.0;
+  for(int k = 0; k < no_iterations; k++){
+    local_error = 0.0;
+    for(int i = start; i < end; i++){
+      mv_compute(i); 
+      local_error = fmax(local_error, fabs(vector_y[i] - vector_x[i]));
+    }
+    local_errors[my_rank] = local_error;
+    pthread_barrier_wait(&mybarrier);
+    if(my_rank == 0){
+      global_error = 0.0;
+      for(int l = 0; l < thread_count; l++){
+         global_error = fmax(global_error, local_errors[l]);
+      }
+    }
+    pthread_barrier_wait(&mybarrier);
+    for(int i = start; i < end; i++){
+      vector_x[i] = vector_y[i]; 
+    }
+    if(global_error < ERROR_THRESHOLD){
+      break;
+    }
+  }
 }
-
 /*---------------------------------------------------------------------
  * Function:  work_blockcyclic
  * Purpose:   Run t iterations of parallel computation:  {y=d+Ax; x=y} 
