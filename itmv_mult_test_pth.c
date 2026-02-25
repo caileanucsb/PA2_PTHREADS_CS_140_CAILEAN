@@ -22,7 +22,6 @@
 #define TEST_CORRECTNESS 1
 #define TEST_REACH_CONVERGENCE 1
 #define THRESHOLD 0.000001
-#define DEBUG1 1
 
 /*Global variables*/
 double *matrix_A;
@@ -140,6 +139,7 @@ void initialize(double A[], double x[], double d[], double y[], int n,
  * In args: n is the number of columns (and rows)
  *          t is the number of iterations conducted
  *          matrix_type: 0 means regular matrix.
+ *          ou
  *                       1 (UPPER_TRIANGULAR) means upper triangular
  * Return:  a column vector that contains the final result column vector y.
  *          Note: We test only for small n value,

@@ -23,7 +23,7 @@
 
 pthread_barrier_t mybarrier; /*It will be initailized at itmv_mult_test_pth.c*/
 volatile double global_error;
-int local_errors[THREAD_COUNT_MAX];
+volatile double local_errors[THREAD_COUNT_MAX];
 
 /*---------------------------------------------------------------------
  * Function:            mv_compute
@@ -84,29 +84,34 @@ void work_block(long my_rank) {
   int start = my_rank*blocksize; 
   int end = start + blocksize;
   if(end > matrix_dim) end = matrix_dim;
-  double local_error = 0.0;
-  for(int k = 0; k < no_iterations; k++){
-    local_error = 0.0;
-    for(int i = start; i < end; i++){
-      mv_compute(i); 
-      local_error = fmax(local_error, fabs(vector_y[i] - vector_x[i]));
+    double local_error = 0.0;
+
+    for (int k = 0; k < no_iterations; k++) {
+        local_error = 0.0;
+        for (int i = start; i < end; i++) {
+            mv_compute(i);
+            local_error = fmax(local_error, fabs(vector_x[i] - vector_y[i]));
+        }
+        local_errors[my_rank] = local_error;
+        pthread_barrier_wait(&mybarrier);
+
+        if (my_rank == 0) {
+            global_error = 0.0;
+            for (int l = 0; l < thread_count; l++) {
+                global_error = fmax(global_error, local_errors[l]);
+            }
+        }
+
+        pthread_barrier_wait(&mybarrier);
+
+        for (int i = start; i < end; i++) {
+            vector_x[i] = vector_y[i];
+        }
+
+        if (global_error <= ERROR_THRESHOLD) {
+            break;
+        }
     }
-    local_errors[my_rank] = local_error;
-    pthread_barrier_wait(&mybarrier);
-    if(my_rank == 0){
-      global_error = 0.0;
-      for(int l = 0; l < thread_count; l++){
-         global_error = fmax(global_error, local_errors[l]);
-      }
-    }
-    pthread_barrier_wait(&mybarrier);
-    for(int i = start; i < end; i++){
-      vector_x[i] = vector_y[i]; 
-    }
-    if(global_error < ERROR_THRESHOLD){
-      break;
-    }
-  }
 }
 /*---------------------------------------------------------------------
  * Function:  work_blockcyclic
@@ -133,7 +138,37 @@ void work_block(long my_rank) {
  *            double vector_y[]:  vector y
  */
 void work_blockcyclic(long my_rank) {
-  /*Your solution*/
+    double local_error = 0.0;
+    for (int k = 0; k < no_iterations; k++) {
+        local_error = 0.0;
+        for (int block_start = my_rank * cyclic_blocksize; block_start < matrix_dim; block_start += thread_count * cyclic_blocksize) {
+            int start = block_start;
+            int end = start + cyclic_blocksize;
+            if (end > matrix_dim) end = matrix_dim;
+            for (int i = start; i < end; i++) {
+                mv_compute(i);
+                local_error = fmax(local_error, fabs(vector_y[i] - vector_x[i]));
+            }
+        }
+        local_errors[my_rank] = local_error;
+        pthread_barrier_wait(&mybarrier);
+        if (my_rank == 0) {
+            global_error = 0.0;
+            for (int l = 0; l < thread_count; l++) {
+                global_error = fmax(global_error, local_errors[l]);
+            }
+        }
+        pthread_barrier_wait(&mybarrier);
+        for (int block_start = my_rank * cyclic_blocksize; block_start < matrix_dim; block_start += thread_count * cyclic_blocksize) {
+            int start = block_start;
+            int end = start + cyclic_blocksize;
+            if (end > matrix_dim) end = matrix_dim;
+            for (int i = start; i < end; i++) {
+                vector_x[i] = vector_y[i];
+            }
+        }
+        if (global_error < ERROR_THRESHOLD) break;
+    }
 }
 
 /*-------------------------------------------------------------------
