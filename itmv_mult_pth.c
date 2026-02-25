@@ -94,20 +94,16 @@ void work_block(long my_rank) {
         }
         local_errors[my_rank] = local_error;
         pthread_barrier_wait(&mybarrier);
-
+        for (int i = start; i < end; i++) {
+            vector_x[i] = vector_y[i];
+        }
         if (my_rank == 0) {
             global_error = 0.0;
             for (int l = 0; l < thread_count; l++) {
                 global_error = fmax(global_error, local_errors[l]);
             }
         }
-
         pthread_barrier_wait(&mybarrier);
-
-        for (int i = start; i < end; i++) {
-            vector_x[i] = vector_y[i];
-        }
-
         if (global_error <= ERROR_THRESHOLD) {
             break;
         }
@@ -139,9 +135,11 @@ void work_block(long my_rank) {
  */
 void work_blockcyclic(long my_rank) {
     double local_error = 0.0;
+    int start = my_rank * cyclic_blocksize; 
+    int incr = thread_count * cyclic_blocksize;
     for (int k = 0; k < no_iterations; k++) {
         local_error = 0.0;
-        for (int block_start = my_rank * cyclic_blocksize; block_start < matrix_dim; block_start += thread_count * cyclic_blocksize) {
+        for (int block_start = start; block_start < matrix_dim; block_start += incr) {
             int start = block_start;
             int end = start + cyclic_blocksize;
             if (end > matrix_dim) end = matrix_dim;
@@ -152,14 +150,7 @@ void work_blockcyclic(long my_rank) {
         }
         local_errors[my_rank] = local_error;
         pthread_barrier_wait(&mybarrier);
-        if (my_rank == 0) {
-            global_error = 0.0;
-            for (int l = 0; l < thread_count; l++) {
-                global_error = fmax(global_error, local_errors[l]);
-            }
-        }
-        pthread_barrier_wait(&mybarrier);
-        for (int block_start = my_rank * cyclic_blocksize; block_start < matrix_dim; block_start += thread_count * cyclic_blocksize) {
+        for (int block_start = start; block_start < matrix_dim; block_start += incr) {
             int start = block_start;
             int end = start + cyclic_blocksize;
             if (end > matrix_dim) end = matrix_dim;
@@ -167,7 +158,16 @@ void work_blockcyclic(long my_rank) {
                 vector_x[i] = vector_y[i];
             }
         }
-        if (global_error < ERROR_THRESHOLD) break;
+        if (my_rank == 0) {
+            global_error = 0.0;
+            for (int l = 0; l < thread_count; l++) {
+                global_error = fmax(global_error, local_errors[l]);
+            }
+        }
+        pthread_barrier_wait(&mybarrier);
+        if (global_error < ERROR_THRESHOLD) {
+          break;
+        }
     }
 }
 
