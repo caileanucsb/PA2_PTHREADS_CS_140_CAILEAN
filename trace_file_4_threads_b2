@@ -1,0 +1,12 @@
+Test 12: n=4K t=1K upper block mapping: Latency = 0.114755 sec with 1 threads. Matrix dimension 4096
+Test 13: n=4K t=1K upper block cylic (r=1): Latency = 0.127596 sec with 1 threads. Matrix dimension 4096
+Test 14: n=4K t=1K upper block cyclic(r=16): Latency = 0.102096 sec with 1 threads. Matrix dimension 4096
+Summary: Failed 0 out of 3 tests
+Test 12: n=4K t=1K upper block mapping: Latency = 0.091434 sec with 2 threads. Matrix dimension 4096
+Test 13: n=4K t=1K upper block cylic (r=1): Latency = 0.061241 sec with 2 threads. Matrix dimension 4096
+Test 14: n=4K t=1K upper block cyclic(r=16): Latency = 0.067226 sec with 2 threads. Matrix dimension 4096
+Summary: Failed 0 out of 3 tests
+Test 12: n=4K t=1K upper block mapping: Latency = 0.058924 sec with 4 threads. Matrix dimension 4096
+Test 13: n=4K t=1K upper block cylic (r=1): Latency = 0.063129 sec with 4 threads. Matrix dimension 4096
+Test 14: n=4K t=1K upper block cyclic(r=16): Latency = 0.080097 sec with 4 threads. Matrix dimension 4096
+Summary: Failed 0 out of 3 tests
